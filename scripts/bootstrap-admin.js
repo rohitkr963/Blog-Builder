@@ -68,9 +68,9 @@ async function main() {
     throw new Error("That email already belongs to an account. Use a different email address.");
   }
 
-  const password = await readHidden("Admin password (minimum 12 characters): ");
-  if (password.length < 12) {
-    throw new Error("Admin password must be at least 12 characters long.");
+  const password = await readHidden("Admin password (minimum 6 characters): ");
+  if (password.length < 6) {
+    throw new Error("Admin password must be at least 6 characters long.");
   }
 
   const hashedPassword = await bcrypt.hash(password, 12);
