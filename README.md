@@ -119,6 +119,20 @@ CLOUDINARY_API_SECRET=your_api_secret
 
 Public signup always creates an `EMPLOYEE`; it cannot assign the Admin role. Create the initial Admin with `npm run bootstrap:admin`, which checks for an existing Admin and prompts for account details in the terminal. Keep `.env.local` private and do not run the bootstrap command again after an Admin exists.
 
+## Deploy on Render
+
+This repository includes a `render.yaml` Blueprint for a Node web service. In Render, choose **New > Blueprint**, connect the repository, and select this file. Render will install dependencies with `npm ci`, build with `npm run build`, start with `npm run start`, and monitor `/api/health`.
+
+Set these values in the Render Environment tab (the Blueprint marks them as secret inputs):
+
+- `MONGODB_URI`: a MongoDB Atlas connection string. Add Render's outbound IP access or use the Atlas network access policy required by your deployment.
+- `JWT_SECRET`: a new random production secret, different from local development.
+- `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET`: production Cloudinary credentials.
+
+After the first deploy, open the Render service Shell and run `node scripts/bootstrap-admin.js` to create the first Admin. The Render Shell already supplies the environment variables, so do not use the local `npm run bootstrap:admin` command there.
+
+Never upload `.env.local` or copy its existing credentials into Render. Rotate any credentials that have been exposed outside the secret manager before going live.
+
 ---
 
 ## Project Structure
