@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import Blog from "@/models/Blog";
 import Comment from "@/models/Comment";
+import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
 const MAX_NAME_LENGTH = 80;
 const MAX_EMAIL_LENGTH = 254;
@@ -50,6 +51,9 @@ export async function GET(_request, { params }) {
 
 export async function POST(request, { params }) {
   try {
+    const rate = checkRateLimit(request, "comment", 5, 10 * 60 * 1000);
+    if (!rate.allowed) return rateLimitResponse(rate.retryAfter);
+
     const { slug } = await params;
     const blog = await findPublishedBlog(slug);
     if (!blog) {
@@ -83,10 +87,13 @@ export async function POST(request, { params }) {
       name,
       email,
       content,
-      status: "APPROVED",
+      status: "PENDING",
     });
 
-    return NextResponse.json({ success: true, comment: publicComment(comment) }, { status: 201 });
+    return NextResponse.json(
+      { success: true, comment: null, message: "Your comment was submitted for moderation." },
+      { status: 201 }
+    );
   } catch (error) {
     console.error("POST public blog comment error:", error.message);
     return NextResponse.json({ success: false, message: "Failed to submit comment" }, { status: 500 });

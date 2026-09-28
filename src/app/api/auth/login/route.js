@@ -3,9 +3,13 @@ import bcrypt from "bcryptjs";
 import { connectDB } from "@/lib/db";
 import User from "@/models/User";
 import { signToken } from "@/lib/auth";
+import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
 export async function POST(request) {
   try {
+    const rate = checkRateLimit(request, "login", 10, 15 * 60 * 1000);
+    if (!rate.allowed) return rateLimitResponse(rate.retryAfter);
+
     const body = await request.json().catch(() => null);
 
     if (!body || !body.email || !body.password) {
@@ -45,6 +49,13 @@ export async function POST(request) {
       return NextResponse.json(
         { success: false, message: "Invalid email or password" },
         { status: 401 }
+      );
+    }
+
+    if (process.env.REQUIRE_EMAIL_VERIFICATION === "true" && !user.emailVerified) {
+      return NextResponse.json(
+        { success: false, message: "Please verify your email before signing in." },
+        { status: 403 }
       );
     }
 

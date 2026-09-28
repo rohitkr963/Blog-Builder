@@ -74,6 +74,12 @@ JWT_SECRET=your_super_secret_jwt_key_here
 CLOUDINARY_CLOUD_NAME=your_cloud_name
 CLOUDINARY_API_KEY=your_api_key
 CLOUDINARY_API_SECRET=your_api_secret
+
+# Optional email delivery for password reset and email verification
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+RESEND_API_KEY=your_resend_api_key
+RESEND_FROM_EMAIL=BlogCraft <noreply@example.com>
+REQUIRE_EMAIL_VERIFICATION=false
 ```
 
 *Note: Never commit real production secrets into source control.*
@@ -218,12 +224,18 @@ blog-builder/
 - [x] Public Homepage with Hero, Card Grid, Search, Category Filter, and Tag Filter
 - [x] Individual Article Reader page with view counter and reading time calculation
 - [x] Fully Responsive Layout (375px mobile, 768px tablet, 1440px desktop)
+- [x] Password reset flow with expiring tokens and optional Resend delivery
+- [x] Optional email verification flow with expiring verification tokens
+- [x] Admin comment moderation queue (approve, reject, delete)
+- [x] Login, signup, password reset, and comment rate limiting
+- [x] SEO metadata, Open Graph tags, sitemap, and robots policy
+- [x] Production smoke test with temporary-user cleanup
 
 ---
 
 ## Limitations / Skipped Features
 
 - **OAuth / Social Logins**: Not required by assignment.
-- **Email Verification & Password Reset**: Excluded per assignment scope.
+- **Email delivery**: Configure Resend variables to deliver password reset and verification links; without them, links are logged server-side for local development.
 - **Nested Categories / Tag Hierarchies**: Simple flat taxonomy used per requirement guidelines.
 - **Complex Media Library Manager**: Direct Cloudinary file upload used per assignment instructions.

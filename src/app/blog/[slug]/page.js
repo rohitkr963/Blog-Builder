@@ -12,6 +12,13 @@ export default function BlogDetailPage({ params }) {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [error, setError] = useState("");
+  const [likeData, setLikeData] = useState({ likeCount: 0, likedByCurrentUser: false });
+  const [comments, setComments] = useState([]);
+  const [commentForm, setCommentForm] = useState({ name: "", email: "", content: "" });
+  const [likeLoading, setLikeLoading] = useState(false);
+  const [commentLoading, setCommentLoading] = useState(false);
+  const [interactionError, setInteractionError] = useState("");
+  const [commentSuccess, setCommentSuccess] = useState("");
 
   useEffect(() => {
     const fetchPublicBlog = async () => {
@@ -40,6 +47,96 @@ export default function BlogDetailPage({ params }) {
       fetchPublicBlog();
     }
   }, [slug]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadEngagement() {
+      try {
+        const [likesResponse, commentsResponse] = await Promise.all([
+          fetch(`/api/public/blogs/${slug}/like`),
+          fetch(`/api/public/blogs/${slug}/comments`),
+        ]);
+        const [likesData, commentsData] = await Promise.all([
+          likesResponse.json(),
+          commentsResponse.json(),
+        ]);
+
+        if (!isMounted) return;
+        if (likesResponse.ok && likesData.success) {
+          setLikeData({
+            likeCount: likesData.likeCount || 0,
+            likedByCurrentUser: Boolean(likesData.likedByCurrentUser),
+          });
+        }
+        if (commentsResponse.ok && commentsData.success) {
+          setComments(commentsData.comments || []);
+        }
+        if (!likesResponse.ok || !commentsResponse.ok) {
+          setInteractionError("Reader interactions could not be loaded.");
+        }
+      } catch {
+        if (isMounted) setInteractionError("Reader interactions could not be loaded.");
+      }
+    }
+
+    if (slug) loadEngagement();
+    return () => { isMounted = false; };
+  }, [slug]);
+
+  const handleLike = async () => {
+    setLikeLoading(true);
+    setInteractionError("");
+
+    try {
+      const method = likeData.likedByCurrentUser ? "DELETE" : "POST";
+      const response = await fetch(`/api/public/blogs/${slug}/like`, { method });
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || "Could not update your like.");
+      }
+
+      setLikeData({
+        likeCount: data.likeCount || 0,
+        likedByCurrentUser: Boolean(data.likedByCurrentUser),
+      });
+    } catch (likeError) {
+      setInteractionError(likeError.message || "Could not update your like.");
+    } finally {
+      setLikeLoading(false);
+    }
+  };
+
+  const handleCommentSubmit = async (event) => {
+    event.preventDefault();
+    setCommentLoading(true);
+    setInteractionError("");
+    setCommentSuccess("");
+
+    try {
+      const response = await fetch(`/api/public/blogs/${slug}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: commentForm.name.trim(),
+          email: commentForm.email.trim(),
+          content: commentForm.content.trim(),
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || "Could not submit your comment.");
+      }
+
+      if (data.comment) setComments((current) => [data.comment, ...current]);
+      setCommentForm({ name: "", email: "", content: "" });
+      setCommentSuccess(data.message || "Your comment was submitted for moderation.");
+    } catch (commentError) {
+      setInteractionError(commentError.message || "Could not submit your comment.");
+    } finally {
+      setCommentLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -163,6 +260,21 @@ export default function BlogDetailPage({ params }) {
               dangerouslySetInnerHTML={{ __html: content }}
             />
 
+            <div className="flex flex-wrap items-center justify-between gap-3 border-y border-gray-200 py-4">
+              <button
+                type="button"
+                aria-pressed={likeData.likedByCurrentUser}
+                disabled={likeLoading}
+                onClick={handleLike}
+                className="ui-btn ui-btn-secondary px-4 py-2 text-sm"
+              >
+                {likeLoading ? "Updating..." : likeData.likedByCurrentUser ? "♥ Liked" : "♡ Like article"}
+              </button>
+              <span className="text-sm text-gray-600" aria-live="polite">
+                {likeData.likeCount} {likeData.likeCount === 1 ? "like" : "likes"}
+              </span>
+            </div>
+
             {/* Article Tags */}
             {Array.isArray(tags) && tags.length > 0 && (
               <div className="pt-8 border-t border-gray-100 flex flex-wrap gap-2">
@@ -178,6 +290,82 @@ export default function BlogDetailPage({ params }) {
             )}
           </div>
         </article>
+
+        <section aria-labelledby="comments-title" className="mx-auto mt-8 max-w-3xl border-t border-gray-200 pt-8">
+          <h2 id="comments-title" className="text-2xl font-bold text-gray-900">
+            Reader comments ({comments.length})
+          </h2>
+          <p className="mt-2 text-sm text-gray-600">Join the conversation about this article.</p>
+
+          {interactionError && <p role="alert" className="mt-4 text-sm text-red-700">{interactionError}</p>}
+          {commentSuccess && <p role="status" className="mt-4 text-sm text-emerald-700">{commentSuccess}</p>}
+
+          <form onSubmit={handleCommentSubmit} className="mt-6 grid gap-4 sm:grid-cols-2">
+            <div>
+              <label htmlFor="comment-name" className="mb-1 block text-sm font-medium text-gray-800">Name</label>
+              <input
+                id="comment-name"
+                name="name"
+                autoComplete="name"
+                required
+                maxLength={80}
+                value={commentForm.name}
+                onChange={(event) => setCommentForm((current) => ({ ...current, name: event.target.value }))}
+                className="ui-input"
+              />
+            </div>
+            <div>
+              <label htmlFor="comment-email" className="mb-1 block text-sm font-medium text-gray-800">Email</label>
+              <input
+                id="comment-email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                required
+                maxLength={254}
+                value={commentForm.email}
+                onChange={(event) => setCommentForm((current) => ({ ...current, email: event.target.value }))}
+                className="ui-input"
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <label htmlFor="comment-content" className="mb-1 block text-sm font-medium text-gray-800">Comment</label>
+              <textarea
+                id="comment-content"
+                name="content"
+                required
+                maxLength={2000}
+                rows={4}
+                value={commentForm.content}
+                onChange={(event) => setCommentForm((current) => ({ ...current, content: event.target.value }))}
+                className="ui-textarea"
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <button type="submit" disabled={commentLoading} className="ui-btn ui-btn-primary px-5 py-2.5">
+                {commentLoading ? "Posting..." : "Post comment"}
+              </button>
+            </div>
+          </form>
+
+          {comments.length > 0 ? (
+            <ol className="mt-8 divide-y divide-gray-200">
+              {comments.map((comment) => (
+                <li key={comment.id} className="py-5 first:pt-0">
+                  <div className="flex flex-wrap items-baseline justify-between gap-2">
+                    <h3 className="font-semibold text-gray-900">{comment.name}</h3>
+                    <time className="text-xs text-gray-500" dateTime={comment.createdAt}>
+                      {new Date(comment.createdAt).toLocaleDateString()}
+                    </time>
+                  </div>
+                  <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-gray-700">{comment.content}</p>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <p className="mt-8 border-t border-gray-200 py-5 text-sm text-gray-600">No comments yet. Start the conversation.</p>
+          )}
+        </section>
       </main>
 
       {/* Footer */}
