@@ -1,0 +1,9 @@
+# lib/
+# This folder will contain shared application logic:
+# - db.js            → MongoDB connection (Phase 3)
+# - auth.js          → Auth helper functions (Phase 5)
+# - jwt.js           → JWT sign/verify functions (Phase 6)
+# - cloudinary.js    → Cloudinary config (Phase 12)
+# - validations.js   → Input validation helpers
+
+# Files will be created as each phase begins.

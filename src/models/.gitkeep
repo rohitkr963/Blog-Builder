@@ -1,0 +1,7 @@
+# models/
+# This folder will contain Mongoose schemas:
+# - User.js          → User model (name, email, password, role) — Phase 4
+# - Blog.js          → Blog model (title, slug, content, etc.) — Phase 8
+# - Category.js      → Category model — Phase 10
+
+# Files will be created as each phase begins.

@@ -1,0 +1,7 @@
+# dashboard/
+# This folder will contain dashboard-specific components:
+# - StatsCard.jsx    → Stat box (total blogs, published, drafts)
+# - BlogTable.jsx    → Table of blogs with actions
+# - EmployeeTable.jsx → Table of employees (admin only)
+
+# These will be added in Phase 13/14.

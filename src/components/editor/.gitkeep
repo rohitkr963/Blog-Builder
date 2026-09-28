@@ -1,0 +1,6 @@
+# editor/
+# This folder will contain the TipTap rich text editor components:
+# - BlogEditor.jsx   → Main TipTap editor wrapper (Phase 11)
+# - Toolbar.jsx      → Editor toolbar buttons (bold, italic, etc.)
+
+# These will be added in Phase 11.

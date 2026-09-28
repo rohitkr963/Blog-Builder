@@ -1,0 +1,7 @@
+# blog/
+# This folder will contain blog-specific components:
+# - BlogCard.jsx     → Card displayed on the public homepage
+# - BlogList.jsx     → Grid of blog cards
+# - BlogMeta.jsx     → Author, date, read time info
+
+# These will be added in Phase 15/16.
