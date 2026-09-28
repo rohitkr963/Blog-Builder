@@ -4,13 +4,6 @@ import mongoose from "mongoose";
 // process.env gives us access to variables defined in .env.local
 const MONGODB_URI = process.env.MONGODB_URI;
 
-// Guard: If someone forgets to set MONGODB_URI, fail early with a clear message
-if (!MONGODB_URI) {
-  throw new Error(
-    "Please define the MONGODB_URI environment variable in .env.local"
-  );
-}
-
 /**
  * WHY CACHING?
  *
@@ -41,6 +34,10 @@ if (!cached) {
  * or creates a new one and caches it for reuse.
  */
 export async function connectDB() {
+  if (!MONGODB_URI) {
+    throw new Error("MONGODB_URI environment variable is missing.");
+  }
+
   // If we already have an active connection, return it immediately
   if (cached.conn) {
     return cached.conn;
