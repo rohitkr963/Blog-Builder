@@ -36,7 +36,7 @@ export default function CreateBlogPage() {
         const res = await fetch("/api/public/categories");
         const data = await res.json();
         if (res.ok && data.success && data.categories?.length > 0) {
-          setCategoryOptions(data.categories);
+          setCategoryOptions((current) => Array.from(new Set([...current, ...data.categories])));
         }
       } catch (err) {
         console.error("Failed to load category options:", err);

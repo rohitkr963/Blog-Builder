@@ -41,7 +41,7 @@ export default function AdminEditBlogPage({ params }) {
         const res = await fetch("/api/admin/categories");
         const data = await res.json();
         if (res.ok && data.success && data.categories?.length > 0) {
-          setCategoryOptions(data.categories.map((c) => c.name));
+          setCategoryOptions((current) => Array.from(new Set([...current, ...data.categories.map((category) => category.name)])));
         }
       } catch (err) {
         console.error("Failed to load admin categories:", err);
