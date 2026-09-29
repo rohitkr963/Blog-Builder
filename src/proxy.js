@@ -6,7 +6,14 @@ const JWT_SECRET = process.env.JWT_SECRET;
 export function proxy(request) {
   const { pathname, search } = request.nextUrl;
 
-  if (pathname === "/" || pathname === "/login" || pathname === "/signup") {
+  const isPublicPage =
+    pathname === "/" ||
+    pathname === "/login" ||
+    pathname === "/signup" ||
+    pathname === "/blogs" ||
+    pathname.startsWith("/blog/");
+
+  if (isPublicPage) {
     return NextResponse.next();
   }
 

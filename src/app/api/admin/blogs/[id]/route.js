@@ -6,6 +6,7 @@ import Comment from "@/models/Comment";
 import Like from "@/models/Like";
 import { requireAdmin } from "@/lib/auth";
 import { generateUniqueSlug } from "@/lib/slug";
+import { sanitizeBlogContent } from "@/lib/sanitize-blog-content";
 
 /**
  * Helper to validate MongoDB ObjectId format.
@@ -108,7 +109,7 @@ export async function PUT(request, { params }) {
     }
 
     if (content !== undefined && content.trim() !== "") {
-      blog.content = content;
+      blog.content = sanitizeBlogContent(content);
     }
 
     if (category !== undefined && category.trim() !== "") {

@@ -249,6 +249,20 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      const response = await fetch("/api/auth/logout", { method: "POST" });
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || "Could not log out.");
+      }
+      router.replace("/login");
+      router.refresh();
+    } catch (logoutError) {
+      setError(logoutError.message || "Could not log out. Please try again.");
+    }
+  };
+
   const handleDeleteEmployee = async (employeeId, employeeName) => {
     const confirmed = window.confirm(
       `Are you sure you want to delete "${employeeName}"?`
@@ -583,6 +597,9 @@ export default function AdminDashboardPage() {
 
           <div className="flex items-center gap-3">
             <ThemeToggle />
+            <button type="button" onClick={handleLogout} className="ui-btn ui-btn-secondary px-4 py-2.5 text-sm">
+              Sign out
+            </button>
             <button
               type="button"
               onClick={() => {

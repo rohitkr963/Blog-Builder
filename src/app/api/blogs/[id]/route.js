@@ -4,6 +4,7 @@ import { connectDB } from "@/lib/db";
 import Blog from "@/models/Blog";
 import { requireAuth } from "@/lib/auth";
 import { generateUniqueSlug } from "@/lib/slug";
+import { sanitizeBlogContent } from "@/lib/sanitize-blog-content";
 
 /**
  * Helper to validate MongoDB ObjectId string format.
@@ -133,7 +134,7 @@ export async function PUT(request, { params }) {
 
     // Update remaining editable fields
     if (typeof content === "string") {
-      blog.content = content;
+      blog.content = sanitizeBlogContent(content);
     }
 
     if (typeof category === "string") {

@@ -32,6 +32,8 @@ export default function PublicHomePage() {
   const [selectedTag, setSelectedTag] = useState("");
   const [selectedAuthor, setSelectedAuthor] = useState("");
   const [page, setPage] = useState(1);
+  const [chartMetric, setChartMetric] = useState("views");
+  const [hoveredChartPoint, setHoveredChartPoint] = useState(null);
   const [pagination, setPagination] = useState({
     page: 1,
     limit: BLOGS_PER_PAGE,
@@ -48,6 +50,8 @@ export default function PublicHomePage() {
     totalLikes: 0,
     totalComments: 0,
     topArticles: [],
+    trendingTopics: [],
+    topContributors: [],
   });
 
   useEffect(() => {
@@ -88,6 +92,7 @@ export default function PublicHomePage() {
         if (searchQuery.trim()) params.set("q", searchQuery.trim());
         if (selectedCategory) params.set("category", selectedCategory);
         if (selectedTag) params.set("tag", selectedTag);
+        if (selectedAuthor) params.set("author", selectedAuthor);
         params.set("page", String(page));
         params.set("limit", String(BLOGS_PER_PAGE));
 
@@ -99,7 +104,7 @@ export default function PublicHomePage() {
 
         const fetchedBlogs = data.blogs || [];
         setBlogs(fetchedBlogs);
-        setAnalytics(data.analytics || { publishedBlogs: 0, totalViews: 0, totalLikes: 0, totalComments: 0, topArticles: [] });
+        setAnalytics(data.analytics || { publishedBlogs: 0, totalViews: 0, totalLikes: 0, totalComments: 0, topArticles: [], trendingTopics: [], topContributors: [] });
         setPagination(data.pagination || { page, limit: BLOGS_PER_PAGE, totalBlogs: fetchedBlogs.length, totalPages: 1, hasNextPage: false, hasPreviousPage: false });
       } catch (err) {
         if (isMounted) setError(err.message);
@@ -112,7 +117,7 @@ export default function PublicHomePage() {
     return () => {
       isMounted = false;
     };
-  }, [searchQuery, selectedCategory, selectedTag, page]);
+  }, [searchQuery, selectedCategory, selectedTag, selectedAuthor, page]);
 
   const handleSearchChange = (value) => {
     setPage(1);
@@ -130,9 +135,9 @@ export default function PublicHomePage() {
     setSelectedAuthor("");
   };
 
-  const handleAuthorChange = (name) => {
+  const handleAuthorChange = (authorId) => {
     setPage(1);
-    setSelectedAuthor(name);
+    setSelectedAuthor(authorId);
     setSelectedTag("");
   };
 
@@ -144,19 +149,36 @@ export default function PublicHomePage() {
     setSelectedAuthor("");
   };
 
+  const selectedAuthorName = analytics.topContributors.find((person) => person.id === selectedAuthor)?.name;
   const isFilterActive = searchQuery.trim() !== "" || selectedCategory !== "" || selectedTag !== "" || selectedAuthor !== "";
-  const displayedBlogs = selectedAuthor
-    ? blogs.filter((blog) => blog.author?.name?.toLowerCase().includes(selectedAuthor.toLowerCase()))
-    : blogs;
-  const moreArticles = displayedBlogs.slice(4);
+  const displayedBlogs = blogs;
   const featuredBlog = displayedBlogs[0] || null;
-  const trendingTopics = tagsList.slice(0, 5);
-  const contributors = [
-    { name: "Rohit Kumar", role: "Infrastructure Lead", initials: "R", accent: "from-emerald-500 to-teal-600" },
-    { name: "Eva Chen", role: "Data Engineer", initials: "E", accent: "from-indigo-500 to-blue-600" },
-    { name: "Dr. S. Chen", role: "Data Research", initials: "S", accent: "from-violet-500 to-purple-600" },
-    { name: "Maya Kapoor", role: "Staff Designer", initials: "M", accent: "from-cyan-500 to-sky-600" },
+  const curatedBlogs = displayedBlogs.slice(featuredBlog ? 1 : 0, featuredBlog ? 5 : 4);
+  const moreArticles = displayedBlogs.slice(featuredBlog ? 5 : 4);
+  const trendingTopics = analytics.trendingTopics;
+  const chartMetricOptions = [
+    { key: "views", label: "Page views", color: "#397b70" },
+    { key: "likeCount", label: "Likes", color: "#d17d65" },
+    { key: "commentCount", label: "Comments", color: "#7782a8" },
   ];
+  const currentChartMetric = chartMetricOptions.find((metric) => metric.key === chartMetric) || chartMetricOptions[0];
+  const chartSourceBlogs = chartMetric === "views" && analytics.topArticles.length > 0
+    ? analytics.topArticles
+    : displayedBlogs;
+  const chartData = [...chartSourceBlogs]
+    .map((blog) => ({ blog, value: Number(blog[chartMetric]) || 0 }))
+    .sort((a, b) => b.value - a.value);
+  const chartAxisMaximum = Math.max(4, Math.ceil(Math.max(0, ...chartData.map(({ value }) => value)) / 4) * 4);
+  const chartPoints = chartData.map(({ value }, index) => ({
+    x: chartData.length === 1 ? 373 : 58 + (index * 630) / (chartData.length - 1),
+    y: 20 + (1 - value / chartAxisMaximum) * 170,
+    value,
+  }));
+  const chartLinePath = chartPoints.map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`).join(" ");
+  const chartAreaPath = chartPoints.length > 0
+    ? `${chartLinePath} L ${chartPoints[chartPoints.length - 1].x} 190 L ${chartPoints[0].x} 190 Z`
+    : "";
+  const hasChartData = chartPoints.some((point) => point.value > 0);
 
   return (
     <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
@@ -206,14 +228,14 @@ export default function PublicHomePage() {
             </div>
             {isFilterActive && (
               <div className="mt-4 flex items-center justify-between border-t border-[var(--line)] pt-3 text-xs text-gray-500">
-                <span>{selectedAuthor ? `Filtered by author: ${selectedAuthor}` : "Filtered results"}</span>
+                <span>{selectedAuthor ? `Filtered by author: ${selectedAuthorName || "Contributor"}` : "Filtered results"}</span>
                 <button type="button" onClick={handleClearFilters} className="font-semibold text-[var(--accent)] hover:underline">Clear filters</button>
               </div>
             )}
           </div>
         </section>
 
-        <section aria-labelledby="analytics-heading" className="mt-8 grid gap-6 xl:grid-cols-[1.4fr_0.8fr]">
+        <section aria-labelledby="analytics-heading" className="mt-8">
           <div className="ui-card p-5 sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -239,26 +261,6 @@ export default function PublicHomePage() {
             </div>
           </div>
 
-          <div className="ui-card p-5 sm:p-6">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--accent)]">Reader activity</p>
-            <h3 className="mt-2 text-xl font-semibold text-gray-900">Most viewed articles</h3>
-            <div className="mt-5 space-y-4">
-              {analytics.topArticles.length > 0 ? analytics.topArticles.map((article, index) => {
-                const highestViews = Math.max(1, analytics.topArticles[0]?.views || 0);
-                const width = Math.max(4, Math.round((article.views / highestViews) * 100));
-                return (
-                  <Link key={article.slug} href={`/blog/${article.slug}`} className="group block">
-                    <div className="flex items-start justify-between gap-3">
-                      <span className="line-clamp-1 text-sm font-medium text-gray-700 group-hover:text-[var(--accent)]">{index + 1}. {article.title}</span>
-                      <span className="shrink-0 text-xs text-gray-500">{Number(article.views || 0).toLocaleString()}</span>
-                    </div>
-                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[var(--surface-muted)]"><div className="h-full rounded-full bg-[var(--accent)]" style={{ width: `${width}%` }} /></div>
-                  </Link>
-                );
-              }) : <p className="py-4 text-sm text-gray-500">Article analytics will appear when blogs are published.</p>}
-            </div>
-            <Link href="/blogs" className="mt-5 inline-flex text-sm font-semibold text-[var(--accent)] hover:underline">Explore all blogs <span className="ml-1" aria-hidden="true">→</span></Link>
-          </div>
         </section>
 
         <section className="mt-10 grid gap-6 xl:grid-cols-[1.8fr_0.9fr]">
@@ -298,9 +300,9 @@ export default function PublicHomePage() {
             <div className="ui-card p-5">
               <h3 className="text-xl font-semibold text-gray-900">Trending Topics</h3>
               <div className="mt-5 space-y-3">
-                {trendingTopics.length > 0 ? trendingTopics.map((tag, idx) => (
-                  <button key={tag} type="button" onClick={() => handleTagChange(tag)} className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-left transition ${selectedTag === tag ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--line)] bg-[var(--surface)] hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]"}`}>
-                    <span className="flex items-center gap-3"><span className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--surface-muted)] text-[10px] font-medium text-gray-700">{idx + 1}</span><span className="text-sm font-medium text-gray-700">{tag}</span></span><span className="text-gray-400">›</span>
+                {trendingTopics.length > 0 ? trendingTopics.map((topic, idx) => (
+                  <button key={topic.name} type="button" onClick={() => handleTagChange(topic.name)} className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-left transition ${selectedTag === topic.name ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--line)] bg-[var(--surface)] hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]"}`}>
+                    <span className="flex items-center gap-3"><span className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--surface-muted)] text-[10px] font-medium text-gray-700">{idx + 1}</span><span className="text-sm font-medium text-gray-700">{topic.name}</span></span><span className="text-gray-400">›</span>
                   </button>
                 )) : <div className="text-sm text-gray-500">No tags available yet.</div>}
               </div>
@@ -309,36 +311,15 @@ export default function PublicHomePage() {
             <div className="ui-card p-5">
               <div className="mb-4 flex items-center justify-between"><h3 className="text-xl font-semibold text-gray-900">Top Contributors</h3><button type="button" onClick={() => setSelectedAuthor("")} className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">View all</button></div>
               <div className="space-y-3">
-                {contributors.map((person) => (
-                  <button key={person.name} type="button" onClick={() => handleAuthorChange(person.name)} className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2 text-left transition ${selectedAuthor === person.name ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--line)] bg-[var(--surface)] hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]"}`}>
-                    <span className={`flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br ${person.accent} text-xs font-semibold text-white`}>{person.initials}</span><span><span className="block text-sm font-semibold text-gray-900">{person.name}</span><span className="block text-[11px] uppercase tracking-wide text-gray-500">{person.role}</span></span>
+                {analytics.topContributors.length > 0 ? analytics.topContributors.map((person) => (
+                  <button key={person.id} type="button" onClick={() => handleAuthorChange(person.id)} className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2 text-left transition ${selectedAuthor === person.id ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--line)] bg-[var(--surface)] hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]"}`}>
+                    <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--accent-soft)] text-xs font-semibold text-[var(--accent)]">{person.name?.trim().charAt(0)?.toUpperCase() || "?"}</span><span><span className="block text-sm font-semibold text-gray-900">{person.name}</span><span className="block text-[11px] uppercase tracking-wide text-gray-500">{person.publishedCount} published {person.publishedCount === 1 ? "article" : "articles"}</span></span>
                   </button>
-                ))}
+                )) : <p className="text-sm text-gray-500">No published contributors yet.</p>}
               </div>
             </div>
           </aside>
         </section>
-
-        {categoriesList.length > 0 && (
-          <section aria-labelledby="discipline-heading" className="mt-10 border-y border-[var(--line)] py-6">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--accent)]">Browse the journal</p>
-                <h2 id="discipline-heading" className="mt-1 text-xl font-semibold text-gray-900">Explore by discipline</h2>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <button type="button" aria-pressed={!selectedCategory} onClick={() => { handleCategoryChange(""); setSelectedTag(""); setSelectedAuthor(""); }} className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${!selectedCategory ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]" : "border-[var(--line)] bg-[var(--surface)] text-gray-600 hover:border-[var(--accent)] hover:text-[var(--accent)]"}`}>
-                  All disciplines
-                </button>
-                {categoriesList.map((category) => (
-                  <button key={category} type="button" aria-pressed={selectedCategory === category} onClick={() => { handleCategoryChange(category); setSelectedTag(""); setSelectedAuthor(""); }} className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${selectedCategory === category ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]" : "border-[var(--line)] bg-[var(--surface)] text-gray-600 hover:border-[var(--accent)] hover:text-[var(--accent)]"}`}>
-                    {category}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </section>
-        )}
 
         <section id="blogs" className="mt-12 scroll-mt-24">
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
@@ -351,7 +332,7 @@ export default function PublicHomePage() {
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">{[1, 2, 3, 4].map((item) => <div key={item} className="h-72 animate-pulse rounded-2xl border border-[var(--line)] bg-[var(--surface)]" />)}</div>
           ) : displayedBlogs.length > 0 ? (
             <div className="grid gap-6 lg:grid-cols-2">
-              {displayedBlogs.slice(0, 4).map((blog, idx) => (
+              {curatedBlogs.map((blog, idx) => (
                 <article key={blog.id || blog._id || idx} className="group overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
                   <Link href={`/blog/${blog.slug}`} className="block" aria-label={`Read ${blog.title}`}>
                     <div className="relative mb-4 h-44 overflow-hidden rounded-xl bg-[var(--surface-muted)]">
@@ -405,22 +386,13 @@ export default function PublicHomePage() {
               </div>
               <Link href="/blogs" className="ui-btn ui-btn-secondary w-fit px-4 py-2 text-sm">Browse all articles <span aria-hidden="true">→</span></Link>
             </div>
-            <div className="mt-6 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+            <div className="mt-6">
               <div>
                 <h3 className="text-sm font-semibold text-gray-900">Topics to explore</h3>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {categoriesList.length > 0 ? categoriesList.map((category) => (
                     <button key={category} type="button" onClick={() => { handleCategoryChange(category); setSelectedTag(""); setSelectedAuthor(""); }} className={`rounded-full border px-4 py-2 text-sm transition ${selectedCategory === category ? "border-[var(--accent)] bg-[var(--accent-soft)] font-semibold text-[var(--accent)]" : "border-[var(--line)] bg-[var(--background)] text-gray-700 hover:border-[var(--accent)] hover:text-[var(--accent)]"}`}>{category}</button>
                   )) : <p className="text-sm text-gray-500">Categories will appear as topics are added to the blog.</p>}
-                </div>
-              </div>
-              <div className="rounded-xl bg-[var(--background)] p-5">
-                <h3 className="text-sm font-semibold text-gray-900">Popular tags</h3>
-                <p className="mt-1 text-xs text-gray-500">Choose a tag to find related articles.</p>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {trendingTopics.length > 0 ? trendingTopics.map((tag) => (
-                    <button key={tag} type="button" onClick={() => handleTagChange(tag)} className={`rounded-lg border px-3 py-2 text-xs font-medium transition ${selectedTag === tag ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]" : "border-[var(--line)] bg-[var(--surface)] text-gray-600 hover:border-[var(--accent)] hover:text-[var(--accent)]"}`}>#{tag}</button>
-                  )) : <p className="text-sm text-gray-500">Tags will appear when articles are labeled.</p>}
                 </div>
               </div>
             </div>
@@ -435,6 +407,139 @@ export default function PublicHomePage() {
                 </Link>)}
               </div>
             </div>}
+          </section>
+        )}
+
+        {!loading && displayedBlogs.length > 0 && (
+          <section aria-labelledby="blog-pulse-heading" className="ui-card mt-8 overflow-hidden p-5 sm:p-7">
+            <div className="flex flex-col gap-2 border-b border-[var(--line)] pb-5 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--accent)]">Editorial analytics</p>
+                <h2 id="blog-pulse-heading" className="mt-1 text-xl font-semibold text-gray-900">Publication performance</h2>
+                <p className="mt-1 text-sm text-gray-500">Engagement across the published journal</p>
+              </div>
+              <span className="inline-flex w-fit items-center gap-2 rounded-full bg-[var(--accent-soft)] px-3 py-1.5 text-xs font-semibold text-[var(--accent)]">
+                <span className="h-2 w-2 rounded-full bg-[var(--accent)]" /> Live totals
+              </span>
+            </div>
+
+            <div className="mt-6 grid gap-5 xl:grid-cols-[1.8fr_0.9fr]">
+              <div className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-4 sm:p-5">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--accent)]">Article comparison</p>
+                    <h3 className="mt-1 text-lg font-semibold text-gray-900">Article performance curve</h3>
+                    <p className="mt-1 text-xs text-gray-500">{chartMetric === "views" ? "Leading articles across the journal" : "Current page articles, ranked by metric"}</p>
+                  </div>
+                  <div role="group" aria-label="Choose chart metric" className="inline-flex w-fit rounded-lg border border-[var(--line)] bg-[var(--background)] p-1">
+                    {chartMetricOptions.map((metric) => (
+                      <button key={metric.key} type="button" aria-pressed={chartMetric === metric.key} onClick={() => setChartMetric(metric.key)} className={`rounded-md px-2.5 py-1.5 text-[11px] font-medium transition sm:px-3 ${chartMetric === metric.key ? "bg-[var(--surface)] text-[var(--foreground)] shadow-sm" : "text-gray-500 hover:text-gray-800"}`}>
+                        {metric.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {hasChartData ? (
+                  <div className="mt-4 overflow-x-auto">
+                    <svg role="group" aria-label={`${currentChartMetric.label} by article, sorted highest to lowest`} viewBox="0 0 740 250" className="h-[230px] min-w-[560px] w-full sm:h-[260px]">
+                      <defs>
+                        <linearGradient id="editorial-curve-fill" x1="0" x2="0" y1="0" y2="1">
+                          <stop offset="0%" stopColor={currentChartMetric.color} stopOpacity="0.24" />
+                          <stop offset="100%" stopColor={currentChartMetric.color} stopOpacity="0.02" />
+                        </linearGradient>
+                      </defs>
+                      {Array.from({ length: 5 }, (_, index) => {
+                        const y = 20 + (index * 170) / 4;
+                        const value = Math.round(chartAxisMaximum * (1 - index / 4));
+                        return (
+                          <g key={`${value}-${index}`}>
+                            <text x="43" y={y + 4} textAnchor="end" fontSize="10" fill="var(--muted)">{value.toLocaleString()}</text>
+                            <line x1="52" x2="710" y1={y} y2={y} stroke="var(--line)" strokeDasharray="3 6" />
+                          </g>
+                        );
+                      })}
+                      <path d={chartAreaPath} fill="url(#editorial-curve-fill)" pointerEvents="none" />
+                      <path d={chartLinePath} fill="none" stroke={currentChartMetric.color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" pointerEvents="none" />
+                      {chartPoints.map((point, index) => {
+                        const article = chartData[index].blog;
+                        const isHovered = hoveredChartPoint === index;
+                        const tooltipWidth = 190;
+                        const tooltipX = Math.max(52, Math.min(point.x - tooltipWidth / 2, 710 - tooltipWidth));
+                        const tooltipY = point.y < 70 ? point.y + 15 : point.y - 52;
+                        const tooltipTitle = article.title.length > 28 ? `${article.title.slice(0, 27)}...` : article.title;
+
+                        return (
+                          <g
+                            key={article.id || article._id || article.slug}
+                            role="button"
+                            tabIndex={0}
+                            aria-label={`${article.title}: ${point.value.toLocaleString()} ${currentChartMetric.label.toLowerCase()}`}
+                            onMouseEnter={() => setHoveredChartPoint(index)}
+                            onMouseLeave={() => setHoveredChartPoint(null)}
+                            onFocus={() => setHoveredChartPoint(index)}
+                            onBlur={() => setHoveredChartPoint(null)}
+                          >
+                            <circle cx={point.x} cy={point.y} r="11" fill={currentChartMetric.color} opacity={isHovered ? "0.14" : "0"} style={{ transition: "opacity 180ms ease" }} />
+                            <circle cx={point.x} cy={point.y} r={isHovered ? "7" : "4.5"} fill="var(--surface)" stroke={currentChartMetric.color} strokeWidth={isHovered ? "3" : "2.5"} style={{ cursor: "pointer", transition: "r 180ms ease, stroke-width 180ms ease" }}>
+                              <title>{`${article.title}: ${point.value.toLocaleString()} ${currentChartMetric.label.toLowerCase()}`}</title>
+                            </circle>
+                            <g aria-hidden="true" pointerEvents="none" style={{ opacity: isHovered ? 1 : 0, transform: isHovered ? "translateY(0)" : "translateY(4px)", transition: "opacity 160ms ease, transform 160ms ease" }}>
+                              <rect x={tooltipX} y={tooltipY} width={tooltipWidth} height="42" rx="7" fill="var(--surface)" stroke="var(--line)" />
+                              <text x={tooltipX + 10} y={tooltipY + 17} fontSize="11" fontWeight="600" fill="var(--foreground)">{tooltipTitle}</text>
+                              <text x={tooltipX + 10} y={tooltipY + 32} fontSize="10" fill="var(--muted)">{point.value.toLocaleString()} {currentChartMetric.label.toLowerCase()}</text>
+                            </g>
+                            <text x={point.x} y="222" textAnchor="middle" fontSize="10" fill="var(--muted)">#{index + 1}</text>
+                          </g>
+                        );
+                      })}
+                    </svg>
+                  </div>
+                ) : (
+                  <div className="mt-4 flex h-[230px] items-center justify-center rounded-lg bg-[var(--background)] px-6 text-center sm:h-[260px]">
+                    <div>
+                      <p className="text-sm font-medium text-gray-700">No {currentChartMetric.label.toLowerCase()} recorded yet</p>
+                      <p className="mt-1 text-xs text-gray-500">Article comparisons will appear as readers engage.</p>
+                    </div>
+                  </div>
+                )}
+                <div className="mt-3 flex items-center gap-2 text-[11px] text-gray-500">
+                  <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: currentChartMetric.color }} />
+                  {currentChartMetric.label} per article · {chartMetric === "views" ? "top published articles" : "current results"}
+                </div>
+              </div>
+
+              <aside className="rounded-xl border border-[var(--line)] bg-[var(--background)] p-4 sm:p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--accent)]">Attentive reading</p>
+                    <h3 className="mt-1 text-lg font-semibold text-gray-900">Most viewed articles</h3>
+                    <p className="mt-1 text-xs text-gray-500">Across the published journal</p>
+                  </div>
+                  <span className="shrink-0 text-xs tabular-nums text-gray-500">{Number(analytics.totalViews || 0).toLocaleString()} views</span>
+                </div>
+                {analytics.topArticles.some((article) => Number(article.views) > 0) ? (
+                  <ol className="mt-4 divide-y divide-[var(--line)]">
+                    {analytics.topArticles.filter((article) => Number(article.views) > 0).map((blog, index) => (
+                      <li key={blog.id || blog._id || blog.slug}>
+                        <Link href={`/blog/${blog.slug}`} className="group flex items-start gap-3 py-3 first:pt-0 last:pb-0">
+                          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--accent-soft)] text-xs font-semibold text-[var(--accent)]">{index + 1}</span>
+                          <span className="min-w-0 flex-1">
+                            <span className="line-clamp-2 block text-sm font-medium text-gray-700 group-hover:text-[var(--accent)]">{blog.title}</span>
+                            <span className="mt-1 block text-[11px] text-gray-500">{Number(blog.views).toLocaleString()} views · {Number(blog.likeCount || 0).toLocaleString()} likes</span>
+                          </span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ol>
+                ) : (
+                  <div className="mt-4 flex min-h-44 items-center justify-center rounded-lg bg-[var(--surface)] px-5 text-center text-sm text-gray-500">
+                    Reader activity will appear as article views are recorded.
+                  </div>
+                )}
+              </aside>
+            </div>
+
           </section>
         )}
 

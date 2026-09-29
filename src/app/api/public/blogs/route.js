@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
+import mongoose from "mongoose";
 import { connectDB } from "@/lib/db";
 import Blog from "@/models/Blog";
 import Comment from "@/models/Comment";
 import Like from "@/models/Like";
+import User from "@/models/User";
 
 /**
  * Helper function to safely escape regex special characters.
@@ -34,12 +36,19 @@ export async function GET(request) {
     const q = searchParams.get("q")?.trim();
     const category = searchParams.get("category")?.trim();
     const tag = searchParams.get("tag")?.trim();
+    const authorId = searchParams.get("author")?.trim();
     const page = parsePositiveInteger(searchParams.get("page"), 1);
     const limit = parsePositiveInteger(searchParams.get("limit"), 9);
 
-    if (page === null || limit === null || limit > 50 || (page - 1) * limit > 2_147_483_647) {
+    if (
+      page === null ||
+      limit === null ||
+      limit > 50 ||
+      (page - 1) * limit > 2_147_483_647 ||
+      (authorId && !mongoose.Types.ObjectId.isValid(authorId))
+    ) {
       return NextResponse.json(
-        { success: false, message: "Page must be a positive integer and limit must be between 1 and 50." },
+        { success: false, message: "Invalid page, limit, or author filter." },
         { status: 400 }
       );
     }
@@ -78,13 +87,17 @@ export async function GET(request) {
       });
     }
 
+    if (authorId) {
+      queryConditions.push({ author: new mongoose.Types.ObjectId(authorId) });
+    }
+
     // Combine conditions with $and
     const finalQuery =
       queryConditions.length === 1
         ? queryConditions[0]
         : { $and: queryConditions };
 
-    const [totalBlogs, blogs, publishedBlogs, viewTotals, likeTotals, commentTotals, topArticles] = await Promise.all([
+    const [totalBlogs, blogs, publishedBlogs, viewTotals, likeTotals, commentTotals, topArticles, trendingTopics, topContributors] = await Promise.all([
       Blog.countDocuments(finalQuery),
       Blog.find(finalQuery)
         .populate("author", "name")
@@ -117,6 +130,25 @@ export async function GET(request) {
         .limit(4)
         .select("title slug views")
         .lean(),
+      Blog.aggregate([
+        { $match: { status: "PUBLISHED" } },
+        { $unwind: "$tags" },
+        { $match: { tags: { $type: "string", $ne: "" } } },
+        { $group: { _id: { blog: "$_id", tag: { $toLower: "$tags" } }, name: { $min: "$tags" } } },
+        { $group: { _id: "$_id.tag", name: { $min: "$name" }, articleCount: { $sum: 1 } } },
+        { $sort: { articleCount: -1, name: 1 } },
+        { $limit: 5 },
+        { $project: { _id: 0, name: 1, articleCount: 1 } },
+      ]),
+      Blog.aggregate([
+        { $match: { status: "PUBLISHED" } },
+        { $group: { _id: "$author", publishedCount: { $sum: 1 } } },
+        { $sort: { publishedCount: -1, _id: 1 } },
+        { $limit: 5 },
+        { $lookup: { from: User.collection.name, localField: "_id", foreignField: "_id", as: "author" } },
+        { $unwind: "$author" },
+        { $project: { _id: 0, id: { $toString: "$_id" }, name: "$author.name", publishedCount: 1 } },
+      ]),
     ]);
 
     const blogIds = blogs.map((blog) => blog._id);
@@ -166,6 +198,8 @@ export async function GET(request) {
           slug: article.slug,
           views: article.views || 0,
         })),
+        trendingTopics,
+        topContributors,
       },
       pagination: {
         page,

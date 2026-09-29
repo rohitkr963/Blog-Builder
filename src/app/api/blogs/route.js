@@ -3,6 +3,7 @@ import { connectDB } from "@/lib/db";
 import Blog from "@/models/Blog";
 import { requireAuth } from "@/lib/auth";
 import { generateUniqueSlug } from "@/lib/slug";
+import { sanitizeBlogContent } from "@/lib/sanitize-blog-content";
 
 /**
  * POST /api/blogs
@@ -24,10 +25,13 @@ export async function POST(request) {
 
     const blogStatus = body.status === "PUBLISHED" ? "PUBLISHED" : "DRAFT";
     const title = typeof body.title === "string" ? body.title.trim() : "";
-    const content = typeof body.content === "string" ? body.content : "";
+    const content = sanitizeBlogContent(body.content);
     const category = typeof body.category === "string" ? body.category.trim() : "";
     const excerpt = typeof body.excerpt === "string" ? body.excerpt.trim() : "";
     const coverImage = typeof body.coverImage === "string" ? body.coverImage.trim() : "";
+    const tags = Array.isArray(body.tags)
+      ? body.tags.filter((tag) => typeof tag === "string").map((tag) => tag.trim()).filter(Boolean)
+      : [];
 
     if (blogStatus === "PUBLISHED" && (!title || !content.trim() || !category)) {
       return NextResponse.json(

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import Blog from "@/models/Blog";
+import { sanitizeBlogContent } from "@/lib/sanitize-blog-content";
 
 /**
  * GET /api/public/blogs/[slug]
@@ -42,7 +43,7 @@ export async function GET(request, { params }) {
       id: blog._id.toString(),
       title: blog.title,
       slug: blog.slug,
-      content: blog.content,
+      content: sanitizeBlogContent(blog.content),
       excerpt: blog.excerpt,
       coverImage: blog.coverImage,
       author: blog.author ? { id: blog.author._id.toString(), name: blog.author.name } : null,

@@ -254,9 +254,34 @@ textarea::placeholder {
 
 [data-theme="dark"] .text-gray-600,
 [data-theme="dark"] .text-gray-500,
+[data-theme="dark"] .text-gray-800,
 [data-theme="dark"] .text-gray-700,
 [data-theme="dark"] .text-gray-900 {
   color: var(--foreground) !important;
+}
+
+[data-theme="dark"] .text-red-600,
+[data-theme="dark"] .text-red-700,
+[data-theme="dark"] .text-red-800 {
+  color: #fda4af !important;
+}
+
+[data-theme="dark"] .text-emerald-600,
+[data-theme="dark"] .text-emerald-700,
+[data-theme="dark"] .text-emerald-800 {
+  color: #6ee7b7 !important;
+}
+
+[data-theme="dark"] .text-amber-600,
+[data-theme="dark"] .text-amber-700,
+[data-theme="dark"] .text-amber-800 {
+  color: #fcd34d !important;
+}
+
+[data-theme="dark"] .text-purple-600,
+[data-theme="dark"] .text-purple-700,
+[data-theme="dark"] .text-purple-800 {
+  color: #d8b4fe !important;
 }
 
 [data-theme="dark"] .bg-white,
