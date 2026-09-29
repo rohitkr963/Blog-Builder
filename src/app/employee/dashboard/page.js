@@ -95,7 +95,7 @@ export default function EmployeeDashboardPage() {
 
           <Link
             href="/employee/blog/new"
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-lg shadow-sm transition"
+            className="ui-btn ui-btn-primary min-h-11 px-4 text-sm"
           >
             <svg
               className="w-4 h-4"
@@ -144,7 +144,7 @@ export default function EmployeeDashboardPage() {
               </p>
               <Link
                 href="/employee/blog/new"
-                className="inline-block px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm transition"
+                className="ui-btn ui-btn-primary min-h-11 px-4 text-sm"
               >
                 Write Your First Blog
               </Link>
