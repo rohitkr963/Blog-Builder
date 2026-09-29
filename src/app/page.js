@@ -187,10 +187,6 @@ export default function PublicHomePage() {
       <main className="mx-auto max-w-[1280px] px-4 pb-12 pt-6 sm:px-6 lg:px-8">
         <section className="rounded-2xl border border-[var(--line)] bg-[var(--surface)] px-4 py-7 shadow-sm sm:px-6 sm:py-9 lg:px-8">
           <div className="mx-auto max-w-4xl text-center">
-            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-[var(--line)] bg-[var(--accent-soft)] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-[var(--accent)]">
-              <span className="h-2 w-2 rounded-full bg-[var(--accent)]" />
-              ISSUE NO. 48 · Q2 EDITORIAL DISPATCH
-            </div>
             <h1 className="text-3xl font-semibold leading-tight text-[var(--foreground)] sm:text-4xl lg:text-5xl">
               AnalyticsLiv Publishing: Insights, Ideas & <span className="text-[var(--accent)]">Engineering Stories</span>
             </h1>
