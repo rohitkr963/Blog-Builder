@@ -68,35 +68,6 @@ const userSchema = new mongoose.Schema(
       required: [true, "Password is required"],
     },
 
-    passwordResetTokenHash: {
-      type: String,
-      default: null,
-      select: false,
-    },
-
-    passwordResetExpiresAt: {
-      type: Date,
-      default: null,
-      select: false,
-    },
-
-    emailVerified: {
-      type: Boolean,
-      default: false,
-    },
-
-    emailVerificationTokenHash: {
-      type: String,
-      default: null,
-      select: false,
-    },
-
-    emailVerificationExpiresAt: {
-      type: Date,
-      default: null,
-      select: false,
-    },
-
     // ---------------------------------------------------------
     // role
     // Determines what the user can do in the application.

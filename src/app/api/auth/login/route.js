@@ -52,13 +52,6 @@ export async function POST(request) {
       );
     }
 
-    if (process.env.REQUIRE_EMAIL_VERIFICATION === "true" && !user.emailVerified) {
-      return NextResponse.json(
-        { success: false, message: "Please verify your email before signing in." },
-        { status: 403 }
-      );
-    }
-
     // Create JWT with user ID payload
     const token = signToken(user._id.toString());
 

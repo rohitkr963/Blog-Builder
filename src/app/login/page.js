@@ -94,7 +94,6 @@ export default function LoginPage() {
               <div>
                 <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-gray-700">Password</label>
                 <input id="password" name="password" type="password" autoComplete="current-password" required value={formData.password} onChange={handleChange} placeholder="Enter your password" className="ui-input min-h-12" />
-                <Link href="/forgot-password" className="mt-2 block text-right text-xs font-semibold text-[var(--accent)] hover:underline">Forgot password?</Link>
               </div>
               <button type="submit" disabled={loading} className="ui-btn ui-btn-primary min-h-12 w-full disabled:opacity-50">{loading ? "Signing in..." : "Sign in"}</button>
             </form>

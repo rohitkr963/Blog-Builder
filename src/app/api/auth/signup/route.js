@@ -1,10 +1,8 @@
 import { NextResponse } from "next/server";
-import { createHash, randomBytes } from "node:crypto";
 import bcrypt from "bcryptjs";
 import { connectDB } from "@/lib/db";
 import User from "@/models/User";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
-import { sendVerificationEmail } from "@/lib/email";
 
 /**
  * POST /api/auth/signup
@@ -78,20 +76,11 @@ export async function POST(request) {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create new user record — ALWAYS force role = "EMPLOYEE"
-    const verificationToken = randomBytes(32).toString("hex");
-    const newUser = await User.create({
+    await User.create({
       name: trimmedName,
       email: normalizedEmail,
       password: hashedPassword,
       role: "EMPLOYEE",
-      emailVerificationTokenHash: createHash("sha256").update(verificationToken).digest("hex"),
-      emailVerificationExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
-    });
-
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin;
-    await sendVerificationEmail({
-      email: newUser.email,
-      verifyUrl: `${baseUrl}/verify-email?token=${verificationToken}`,
     });
 
     return NextResponse.json(

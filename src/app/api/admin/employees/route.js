@@ -74,7 +74,6 @@ export async function POST(request) {
       password: hashedPassword,
       role: "EMPLOYEE",
       department,
-      emailVerified: true,
     });
 
     return NextResponse.json(

@@ -75,11 +75,8 @@ CLOUDINARY_CLOUD_NAME=your_cloud_name
 CLOUDINARY_API_KEY=your_api_key
 CLOUDINARY_API_SECRET=your_api_secret
 
-# Optional email delivery for password reset and email verification
+# Public app URL used for metadata and sitemap
 NEXT_PUBLIC_APP_URL=http://localhost:3000
-RESEND_API_KEY=your_resend_api_key
-RESEND_FROM_EMAIL=BlogCraft <noreply@example.com>
-REQUIRE_EMAIL_VERIFICATION=false
 ```
 
 *Note: Never commit real production secrets into source control.*
