@@ -28,6 +28,18 @@ export async function POST(request) {
         { status: 400 }
       );
     }
+    if (password.length < 8) {
+      return NextResponse.json(
+        { success: false, message: "Password must be at least 8 characters long." },
+        { status: 400 }
+      );
+    }
+    if (Buffer.byteLength(password, "utf8") > 72) {
+      return NextResponse.json(
+        { success: false, message: "Password must be 72 bytes or fewer." },
+        { status: 400 }
+      );
+    }
 
     await connectDB();
 

@@ -9,7 +9,7 @@ import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
  * Public user registration endpoint.
  *
  * Requirements:
- * - name, email, password (min 6 chars) required
+ * - name, email, password (min 8 chars) required
  * - Always forces role = "EMPLOYEE" (prevents ADMIN escalation)
  * - Hashes password with bcryptjs
  * - Rejects duplicate emails with 409 Conflict
@@ -47,13 +47,19 @@ export async function POST(request) {
       );
     }
 
-    // Validation: password required and min 6 chars
-    if (!password || typeof password !== "string" || password.length < 6) {
+    // Validation: password required and min 8 chars
+    if (!password || typeof password !== "string" || password.length < 8) {
       return NextResponse.json(
         {
           success: false,
-          message: "Password is required and must be at least 6 characters long",
+          message: "Password is required and must be at least 8 characters long",
         },
+        { status: 400 }
+      );
+    }
+    if (Buffer.byteLength(password, "utf8") > 72) {
+      return NextResponse.json(
+        { success: false, message: "Password must be 72 bytes or fewer." },
         { status: 400 }
       );
     }

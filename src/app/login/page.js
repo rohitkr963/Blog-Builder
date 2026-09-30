@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import BrandMark from "@/components/layout/BrandMark";
 import ThemeToggle from "@/components/layout/ThemeToggle";
+import PasswordStrengthMeter from "@/components/auth/PasswordStrengthMeter";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -22,6 +23,10 @@ export default function LoginPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (formData.password.length < 8) {
+      setError("Password must be at least 8 characters long.");
+      return;
+    }
     setLoading(true);
     setError("");
 
@@ -93,7 +98,8 @@ export default function LoginPage() {
               </div>
               <div>
                 <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-gray-700">Password</label>
-                <input id="password" name="password" type="password" autoComplete="current-password" required value={formData.password} onChange={handleChange} placeholder="Enter your password" className="ui-input min-h-12" />
+                <input id="password" name="password" type="password" autoComplete="current-password" minLength={8} maxLength={72} aria-describedby="login-password-strength" required value={formData.password} onChange={handleChange} placeholder="Enter your password" className="ui-input min-h-12" />
+                <PasswordStrengthMeter id="login-password-strength" password={formData.password} />
               </div>
               <button type="submit" disabled={loading} className="ui-btn ui-btn-primary min-h-12 w-full disabled:opacity-50">{loading ? "Signing in..." : "Sign in"}</button>
             </form>

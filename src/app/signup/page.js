@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import BrandMark from "@/components/layout/BrandMark";
 import ThemeToggle from "@/components/layout/ThemeToggle";
+import PasswordStrengthMeter from "@/components/auth/PasswordStrengthMeter";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -43,8 +44,8 @@ export default function SignupPage() {
       setLoading(false);
       return;
     }
-    if (!password || password.length < 6) {
-      setError("Password must be at least 6 characters long");
+    if (!password || password.length < 8) {
+      setError("Password must be at least 8 characters long");
       setLoading(false);
       return;
     }
@@ -125,12 +126,13 @@ export default function SignupPage() {
                 <input id="email" name="email" type="email" autoComplete="username" required value={formData.email} onChange={handleChange} placeholder="rohit@analyticsliv.com" className="ui-input min-h-11" />
               </div>
               <div>
-                <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-gray-700">Password <span className="font-normal text-gray-500">(minimum 6 characters)</span></label>
-                <input id="password" name="password" type="password" autoComplete="new-password" required value={formData.password} onChange={handleChange} placeholder="Create a password" className="ui-input min-h-11" />
+                <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-gray-700">Password</label>
+                <input id="password" name="password" type="password" autoComplete="new-password" minLength={8} maxLength={72} aria-describedby="signup-password-strength" required value={formData.password} onChange={handleChange} placeholder="Create a password" className="ui-input min-h-11" />
+                <PasswordStrengthMeter id="signup-password-strength" password={formData.password} />
               </div>
               <div>
                 <label htmlFor="confirmPassword" className="mb-1.5 block text-sm font-medium text-gray-700">Confirm password</label>
-                <input id="confirmPassword" name="confirmPassword" type="password" autoComplete="new-password" required value={formData.confirmPassword} onChange={handleChange} placeholder="Enter your password again" className="ui-input min-h-11" />
+                <input id="confirmPassword" name="confirmPassword" type="password" autoComplete="new-password" minLength={8} maxLength={72} required value={formData.confirmPassword} onChange={handleChange} placeholder="Enter your password again" className="ui-input min-h-11" />
               </div>
               <button type="submit" disabled={loading} className="ui-btn ui-btn-primary min-h-11 w-full disabled:opacity-50">
                 {loading ? "Creating account..." : "Create account"}

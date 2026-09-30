@@ -4,6 +4,7 @@ import { connectDB } from "../src/lib/db.js";
 import Blog from "../src/models/Blog.js";
 import Comment from "../src/models/Comment.js";
 import User from "../src/models/User.js";
+import { measurePasswordStrength } from "../src/lib/password-strength.js";
 
 const port = Number(process.env.SMOKE_PORT || 3100 + Math.floor(Math.random() * 1000));
 const baseUrl = process.env.BASE_URL || `http://127.0.0.1:${port}`;
@@ -34,6 +35,13 @@ async function waitForServer() {
 }
 
 async function main() {
+	if (measurePasswordStrength("abcdefgh").meetsMinimum !== true || measurePasswordStrength("abcdefgh").label !== "Weak") {
+		throw new Error("Password strength meter did not classify a weak 8-character password correctly.");
+	}
+	if (measurePasswordStrength("R0ck#SolidPass").label !== "Strong") {
+		throw new Error("Password strength meter did not classify a strong mixed password correctly.");
+	}
+
 	if (!process.env.BASE_URL) {
 		const command = process.platform === "win32" ? "cmd.exe" : "npm";
 		const args = process.platform === "win32" ? ["/d", "/s", "/c", "npm run start"] : ["run", "start"];
@@ -50,6 +58,11 @@ async function main() {
 	const loginPage = await fetch(`${baseUrl}/login`, { redirect: "manual" });
 	const blogsPage = await fetch(`${baseUrl}/blogs`, { redirect: "manual" });
 	const anonymousBlogApi = await fetch(`${baseUrl}/api/public/blogs/anonymous-test`, { redirect: "manual" });
+	const anonymousPasswordChange = await fetch(`${baseUrl}/api/auth/change-password`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ currentPassword: testPassword, newPassword: "smoke-pass-456" }),
+	});
 	if (homePage.status !== 200 || loginPage.status !== 200) {
 		throw new Error("Homepage and login must remain accessible without authentication.");
 	}
@@ -58,6 +71,22 @@ async function main() {
 	}
 	if (anonymousBlogApi.status !== 401) {
 		throw new Error("Public blog detail API should reject anonymous users.");
+	}
+	if (anonymousPasswordChange.status !== 401) {
+		throw new Error("Password changes should require authentication.");
+	}
+	const shortLogin = await fetch(`${baseUrl}/api/auth/login`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ email: testEmail, password: "short7!" }),
+	});
+	const shortSignup = await fetch(`${baseUrl}/api/auth/signup`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ name: "Short Password", email: `short-${Date.now()}@example.com`, password: "short7!" }),
+	});
+	if (shortLogin.status !== 400 || shortSignup.status !== 400) {
+		throw new Error("Login and signup APIs should reject passwords shorter than 8 characters.");
 	}
 
 	await request("/api/auth/signup", {
@@ -138,6 +167,25 @@ async function main() {
 	if (publicComments.count !== 1 || publicComments.comments?.[0]?.content !== "Smoke test comment.") {
 		throw new Error("Submitted comment was not immediately visible publicly.");
 	}
+
+	const newPassword = "smoke-pass-456";
+	await request("/api/auth/change-password", {
+		method: "POST",
+		headers: authHeaders,
+		body: JSON.stringify({ currentPassword: testPassword, newPassword }),
+	});
+	const oldPasswordLogin = await fetch(`${baseUrl}/api/auth/login`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ email: testEmail, password: testPassword }),
+	});
+	if (oldPasswordLogin.status !== 401) throw new Error("The old password remained valid after password change.");
+	const newPasswordLogin = await fetch(`${baseUrl}/api/auth/login`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ email: testEmail, password: newPassword }),
+	});
+	if (!newPasswordLogin.ok) throw new Error("The new password could not be used to sign in.");
 
 	await request("/api/auth/logout", { method: "POST", headers: { Cookie: authCookie } });
 	console.log("E2E smoke test passed.");
