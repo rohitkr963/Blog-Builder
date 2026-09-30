@@ -27,7 +27,7 @@ export default function BlogDetailPage({ params }) {
         setError("");
         setNotFound(false);
 
-        const res = await fetch(`/api/public/blogs/${slug}`);
+        const res = await fetch(`/api/public/blogs/${encodeURIComponent(slug)}`, { cache: "no-store" });
         const data = await res.json();
 
         if (res.status === 404 || !data.success || !data.blog) {
@@ -130,7 +130,7 @@ export default function BlogDetailPage({ params }) {
 
       if (data.comment) setComments((current) => [data.comment, ...current]);
       setCommentForm({ name: "", email: "", content: "" });
-      setCommentSuccess(data.message || "Your comment was submitted for moderation.");
+      setCommentSuccess(data.message || "Your comment was posted.");
     } catch (commentError) {
       setInteractionError(commentError.message || "Could not submit your comment.");
     } finally {

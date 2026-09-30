@@ -5,7 +5,6 @@ import Blog from "@/models/Blog";
 import Comment from "@/models/Comment";
 import Like from "@/models/Like";
 import { requireAdmin } from "@/lib/auth";
-import { generateUniqueSlug } from "@/lib/slug";
 import { sanitizeBlogContent } from "@/lib/sanitize-blog-content";
 
 /**
@@ -99,13 +98,10 @@ export async function PUT(request, { params }) {
 
     const { title, content, excerpt, coverImage, category, tags, status } = body;
 
-    // Update title and regenerate slug if changed
+    // Keep the public URL stable when the title changes.
     if (title !== undefined && title.trim() !== "") {
       const trimmedTitle = title.trim();
-      if (trimmedTitle !== blog.title) {
-        blog.title = trimmedTitle;
-        blog.slug = await generateUniqueSlug(trimmedTitle, blog._id);
-      }
+      if (trimmedTitle !== blog.title) blog.title = trimmedTitle;
     }
 
     if (content !== undefined && content.trim() !== "") {

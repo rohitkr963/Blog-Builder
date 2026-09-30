@@ -4,6 +4,7 @@ import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import RichTextEditor from "@/components/editor/RichTextEditor";
+import { optimizeUploadImage } from "@/lib/optimize-upload-image";
 
 export default function EditBlogPage({ params }) {
   const router = useRouter();
@@ -119,7 +120,7 @@ export default function EditBlogPage({ params }) {
       setError("");
 
       const imageFormData = new FormData();
-      imageFormData.append("file", file);
+      imageFormData.append("file", await optimizeUploadImage(file));
 
       const res = await fetch("/api/upload/cover", {
         method: "POST",

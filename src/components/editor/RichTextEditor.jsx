@@ -5,6 +5,7 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
 import Image from "@tiptap/extension-image";
+import { optimizeUploadImage } from "@/lib/optimize-upload-image";
 
 export default function RichTextEditor({ content = "", onChange }) {
   const fileInputRef = useRef(null);
@@ -103,7 +104,7 @@ export default function RichTextEditor({ content = "", onChange }) {
     try {
       setUploading(true);
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", await optimizeUploadImage(file));
 
       const res = await fetch("/api/upload/cover", {
         method: "POST",

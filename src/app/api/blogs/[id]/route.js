@@ -3,7 +3,6 @@ import mongoose from "mongoose";
 import { connectDB } from "@/lib/db";
 import Blog from "@/models/Blog";
 import { requireAuth } from "@/lib/auth";
-import { generateUniqueSlug } from "@/lib/slug";
 import { sanitizeBlogContent } from "@/lib/sanitize-blog-content";
 
 /**
@@ -123,13 +122,10 @@ export async function PUT(request, { params }) {
 
     const { title, content, excerpt, coverImage, category, tags, status } = body;
 
-    // Update title and slug if title is provided
+    // Keep the public URL stable when the title changes.
     if (typeof title === "string") {
       const trimmedTitle = title.trim();
-      if (trimmedTitle !== blog.title) {
-        blog.title = trimmedTitle;
-        blog.slug = await generateUniqueSlug(trimmedTitle || "untitled-blog", blog._id);
-      }
+      if (trimmedTitle !== blog.title) blog.title = trimmedTitle;
     }
 
     // Update remaining editable fields

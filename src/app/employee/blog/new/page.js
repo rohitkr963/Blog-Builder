@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import RichTextEditor from "@/components/editor/RichTextEditor";
 import PublicNavbar from "@/components/navigation/PublicNavbar";
+import { optimizeUploadImage } from "@/lib/optimize-upload-image";
 
 export default function CreateBlogPage() {
   const router = useRouter();
@@ -68,7 +69,7 @@ export default function CreateBlogPage() {
       setError("");
 
       const imageFormData = new FormData();
-      imageFormData.append("file", file);
+      imageFormData.append("file", await optimizeUploadImage(file));
 
       const res = await fetch("/api/upload/cover", {
         method: "POST",

@@ -87,11 +87,11 @@ export async function POST(request, { params }) {
       name,
       email,
       content,
-      status: "PENDING",
+      status: "APPROVED",
     });
 
     return NextResponse.json(
-      { success: true, comment: null, message: "Your comment was submitted for moderation." },
+      { success: true, comment: publicComment(comment), message: "Your comment was posted." },
       { status: 201 }
     );
   } catch (error) {
