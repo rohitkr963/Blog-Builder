@@ -77,9 +77,9 @@ export default function PublicNavbar({ showBackLink = false }) {
 
         <nav aria-label="Main navigation" className="hidden items-center gap-6 md:flex">
           <Link href="/" className="text-sm font-semibold text-[var(--foreground)] transition hover:text-[var(--accent)]">BlogCraft</Link>
-          <Link href="/blogs" className="text-sm font-semibold text-[var(--foreground)] transition hover:text-[var(--accent)]">Explore Blogs</Link>
-          {user && <Link href={dashboardHref} className="text-sm font-semibold text-[var(--foreground)] transition hover:text-[var(--accent)]">Employee Studio</Link>}
-          <Link href={writeArticleHref} className="text-sm font-semibold text-[var(--foreground)] transition hover:text-[var(--accent)]">Write Article</Link>
+          <Link href="/blogs" prefetch={false} className="text-sm font-semibold text-[var(--foreground)] transition hover:text-[var(--accent)]">Explore Blogs</Link>
+          {user && <Link href={dashboardHref} prefetch={false} className="text-sm font-semibold text-[var(--foreground)] transition hover:text-[var(--accent)]">Employee Studio</Link>}
+          <Link href={writeArticleHref} prefetch={false} className="text-sm font-semibold text-[var(--foreground)] transition hover:text-[var(--accent)]">Write Article</Link>
         </nav>
 
         <div className="flex items-center gap-3">

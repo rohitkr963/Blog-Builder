@@ -50,14 +50,12 @@ export default function LoginPage() {
       const isEmployeeDashboardReturn = data.user?.role === "EMPLOYEE"
         && safeNext?.split("?")[0].replace(/\/$/, "") === "/employee/dashboard";
 
-      if (safeNext && !isEmployeeDashboardReturn) {
-        router.push(safeNext);
-      } else if (data.user?.role === "ADMIN") {
-        router.push("/admin/dashboard");
-      } else {
-        router.push("/");
-      }
-      router.refresh();
+      const destination = safeNext && !isEmployeeDashboardReturn
+        ? safeNext
+        : data.user?.role === "ADMIN"
+          ? "/admin/dashboard"
+          : "/";
+      window.location.assign(destination);
     } catch (err) {
       setError(err.message);
     } finally {

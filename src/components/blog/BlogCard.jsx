@@ -27,7 +27,7 @@ export default function BlogCard({ blog }) {
   return (
     <article className="group ui-card flex flex-col overflow-hidden transition duration-300 hover:-translate-y-0.5 hover:shadow-lg">
       {/* Cover Image or Fallback Visual */}
-      <Link href={`/blog/${slug}`} className="relative block aspect-[16/10] overflow-hidden bg-gray-100">
+      <Link href={`/blog/${slug}`} prefetch={false} className="relative block aspect-[16/10] overflow-hidden bg-gray-100">
         {coverImage ? (
           <Image
             src={optimizeCloudinaryUrl(coverImage, 1200)}
@@ -59,7 +59,7 @@ export default function BlogCard({ blog }) {
 
           {/* Title */}
           <h2 className="text-lg font-semibold leading-snug tracking-tight text-gray-900 transition group-hover:text-teal-800">
-            <Link href={`/blog/${slug}`}>{title}</Link>
+            <Link href={`/blog/${slug}`} prefetch={false}>{title}</Link>
           </h2>
 
           {/* Excerpt */}

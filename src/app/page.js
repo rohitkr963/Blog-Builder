@@ -330,7 +330,7 @@ export default function PublicHomePage() {
             <div className="grid gap-6 lg:grid-cols-2">
               {curatedBlogs.map((blog, idx) => (
                 <article key={blog.id || blog._id || idx} className="group overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-                  <Link href={`/blog/${blog.slug}`} className="block" aria-label={`Read ${blog.title}`}>
+                  <Link href={`/blog/${blog.slug}`} prefetch={false} className="block" aria-label={`Read ${blog.title}`}>
                     <div className="relative mb-4 h-44 overflow-hidden rounded-xl bg-[var(--surface-muted)]">
                       {blog.coverImage ? <Image src={optimizeCloudinaryUrl(blog.coverImage, 1200)} alt={blog.title} fill sizes="(max-width: 1024px) 100vw, 50vw" unoptimized className="object-cover" /> : <div className="flex h-full items-center justify-center bg-[var(--accent-soft)] text-lg font-medium text-[var(--accent)]">{blog.title?.slice(0, 2).toUpperCase() || "AI"}</div>}
                     </div>
@@ -359,7 +359,7 @@ export default function PublicHomePage() {
             </div>
             <div className="grid gap-x-8 sm:grid-cols-2">
               {moreArticles.map((blog, index) => (
-                <Link key={blog.id || blog._id} href={`/blog/${blog.slug}`} className="group flex min-w-0 items-center gap-4 border-t border-[var(--line)] py-4">
+                <Link key={blog.id || blog._id} href={`/blog/${blog.slug}`} prefetch={false} className="group flex min-w-0 items-center gap-4 border-t border-[var(--line)] py-4">
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--accent-soft)] text-xs font-semibold text-[var(--accent)]">{index + 5}</span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-semibold text-gray-900 group-hover:text-[var(--accent)]">{blog.title}</span>
@@ -396,7 +396,7 @@ export default function PublicHomePage() {
               <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--accent)]">More to read</p>
               <h3 className="mt-1 text-lg font-semibold text-gray-900">Continue with these articles</h3>
               <div className="mt-4 grid gap-4 md:grid-cols-2">
-                {moreArticles.slice(0, 4).map((blog) => <Link key={blog.id || blog._id} href={`/blog/${blog.slug}`} className="group rounded-xl border border-[var(--line)] bg-[var(--background)] p-4 transition hover:border-[var(--accent)]">
+                {moreArticles.slice(0, 4).map((blog) => <Link key={blog.id || blog._id} href={`/blog/${blog.slug}`} prefetch={false} className="group rounded-xl border border-[var(--line)] bg-[var(--background)] p-4 transition hover:border-[var(--accent)]">
                   <span className="block line-clamp-2 font-semibold text-gray-900 group-hover:text-[var(--accent)]">{blog.title}</span>
                   <span className="mt-2 block text-xs text-gray-500">{blog.category || "Blog"} · {blog.readTime || calculateReadTime(blog.excerpt || "")} · {formatPublishedDate(blog.publishedAt || blog.createdAt)}</span>
                   <span className="mt-3 block line-clamp-2 text-sm leading-relaxed text-gray-600">{blog.excerpt || "Open this article for more ideas and insights from the blog."}</span>
@@ -518,7 +518,7 @@ export default function PublicHomePage() {
                   <ol className="mt-4 divide-y divide-[var(--line)]">
                     {analytics.topArticles.filter((article) => Number(article.views) > 0).map((blog, index) => (
                       <li key={blog.id || blog._id || blog.slug}>
-                        <Link href={`/blog/${blog.slug}`} className="group flex items-start gap-3 py-3 first:pt-0 last:pb-0">
+                        <Link href={`/blog/${blog.slug}`} prefetch={false} className="group flex items-start gap-3 py-3 first:pt-0 last:pb-0">
                           <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--accent-soft)] text-xs font-semibold text-[var(--accent)]">{index + 1}</span>
                           <span className="min-w-0 flex-1">
                             <span className="line-clamp-2 block text-sm font-medium text-gray-700 group-hover:text-[var(--accent)]">{blog.title}</span>
@@ -554,11 +554,11 @@ export default function PublicHomePage() {
       <footer className="border-t border-[var(--line)] bg-[var(--background)]">
         <div className="mx-auto grid max-w-[1280px] gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[1.3fr_1fr_1fr_1fr] lg:px-8">
           <div><div className="mb-4 flex items-center gap-3"><Link href="/" className="flex items-center gap-3"><span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--accent)] text-sm font-semibold text-[var(--on-accent)]">B</span><span className="text-xl font-semibold text-gray-900">BlogCraft</span></Link></div><p className="max-w-xs text-base leading-relaxed text-gray-600">Engineering-led publishing platform built for scale, editorial precision, and modern technical knowledge sharing.</p></div>
-          <div><h4 className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Explore</h4><ul className="mt-4 space-y-3 text-sm text-gray-700"><li><Link href="/#blogs" className="transition hover:text-[var(--accent)] hover:underline">Latest articles</Link></li><li><Link href="/blogs" className="transition hover:text-[var(--accent)] hover:underline">All articles</Link></li></ul></div>
-          <div><h4 className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Workspaces</h4><ul className="mt-4 space-y-3 text-sm text-gray-700"><li><Link href="/employee/dashboard" className="transition hover:text-[var(--accent)] hover:underline">Employee dashboard</Link></li><li><Link href="/employee/profile" className="transition hover:text-[var(--accent)] hover:underline">Employee profile</Link></li><li><Link href="/admin/dashboard" className="transition hover:text-[var(--accent)] hover:underline">Admin dashboard</Link></li></ul></div>
-          <div><h4 className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Get started</h4><ul className="mt-4 space-y-3 text-sm text-gray-700"><li><Link href="/employee/blog/new" className="transition hover:text-[var(--accent)] hover:underline">Write an article</Link></li><li><Link href="/login" className="transition hover:text-[var(--accent)] hover:underline">Sign in</Link></li><li><Link href="/signup" className="transition hover:text-[var(--accent)] hover:underline">Create an account</Link></li></ul></div>
+          <div><h4 className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Explore</h4><ul className="mt-4 space-y-3 text-sm text-gray-700"><li><Link href="/#blogs" className="transition hover:text-[var(--accent)] hover:underline">Latest articles</Link></li><li><Link href="/blogs" prefetch={false} className="transition hover:text-[var(--accent)] hover:underline">All articles</Link></li></ul></div>
+          <div><h4 className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Workspaces</h4><ul className="mt-4 space-y-3 text-sm text-gray-700"><li><Link href="/employee/dashboard" prefetch={false} className="transition hover:text-[var(--accent)] hover:underline">Employee dashboard</Link></li><li><Link href="/employee/profile" prefetch={false} className="transition hover:text-[var(--accent)] hover:underline">Employee profile</Link></li><li><Link href="/admin/dashboard" prefetch={false} className="transition hover:text-[var(--accent)] hover:underline">Admin dashboard</Link></li></ul></div>
+          <div><h4 className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Get started</h4><ul className="mt-4 space-y-3 text-sm text-gray-700"><li><Link href="/employee/blog/new" prefetch={false} className="transition hover:text-[var(--accent)] hover:underline">Write an article</Link></li><li><Link href="/login" className="transition hover:text-[var(--accent)] hover:underline">Sign in</Link></li><li><Link href="/signup" className="transition hover:text-[var(--accent)] hover:underline">Create an account</Link></li></ul></div>
         </div>
-        <div className="mx-auto flex max-w-[1280px] flex-col gap-3 border-t border-[var(--line)] px-4 py-5 text-sm text-gray-600 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8"><p>© 2025 BlogCraft Media Platforms Inc. All editorial rights reserved.</p><div className="flex flex-wrap items-center gap-x-5 gap-y-2"><Link href="/">Home</Link><Link href="/blogs">Explore blogs</Link><Link href="/login">Sign in</Link></div></div>
+        <div className="mx-auto flex max-w-[1280px] flex-col gap-3 border-t border-[var(--line)] px-4 py-5 text-sm text-gray-600 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8"><p>© 2025 BlogCraft Media Platforms Inc. All editorial rights reserved.</p><div className="flex flex-wrap items-center gap-x-5 gap-y-2"><Link href="/">Home</Link><Link href="/blogs" prefetch={false}>Explore blogs</Link><Link href="/login">Sign in</Link></div></div>
       </footer>
     </div>
   );
