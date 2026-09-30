@@ -223,7 +223,7 @@ export default function BlogDetailPage({ params }) {
                 {category}
               </span>
               <div className="flex items-center gap-3">
-                <span>{readTime}</span>
+                <span aria-label={`Estimated reading time: ${readTime}`}>{readTime}</span>
                 <span>•</span>
                 <span>{views} views</span>
               </div>
@@ -256,7 +256,7 @@ export default function BlogDetailPage({ params }) {
 
             {/* Rich Text Article Body (HTML Rendered Safely) */}
             <div
-              className="prose prose-blue prose-lg max-w-none text-gray-900 leading-relaxed space-y-4 pt-2"
+              className="article-content pt-2"
               dangerouslySetInnerHTML={{ __html: content }}
             />
 

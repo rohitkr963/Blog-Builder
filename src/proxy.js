@@ -5,26 +5,33 @@ const JWT_SECRET = process.env.JWT_SECRET;
 
 export function proxy(request) {
   const { pathname, search } = request.nextUrl;
+  const normalizedPath = pathname.replace(/\/+$/, "") || "/";
 
-  const isPublicPage =
-    pathname === "/" ||
-    pathname === "/login" ||
-    pathname === "/signup" ||
-    pathname === "/blogs" ||
-    pathname.startsWith("/blog/");
+  const isPublicPage = ["/", "/login", "/signup"].includes(normalizedPath);
+  const isPublicApi =
+    normalizedPath.startsWith("/api/auth/") ||
+    normalizedPath === "/api/health" ||
+    ["/api/public/blogs", "/api/public/categories", "/api/public/tags"].includes(normalizedPath);
 
-  if (isPublicPage) {
+  if (isPublicPage || isPublicApi) {
     return NextResponse.next();
   }
 
   const token = request.cookies.get("token")?.value;
   if (token && JWT_SECRET) {
     try {
-      jwt.verify(token, JWT_SECRET);
-      return NextResponse.next();
+      const payload = jwt.verify(token, JWT_SECRET);
+      if (typeof payload.userId === "string") return NextResponse.next();
     } catch {
       // Invalid or expired tokens must sign in again.
     }
+  }
+
+  if (normalizedPath.startsWith("/api/")) {
+    return NextResponse.json(
+      { success: false, message: "Authentication required. Please log in." },
+      { status: 401 }
+    );
   }
 
   const loginUrl = new URL("/login", request.url);
@@ -33,5 +40,5 @@ export function proxy(request) {
 }
 
 export const config = {
-  matcher: ["/((?!api|_next|.*\\..*).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\..*).*)"],
 };

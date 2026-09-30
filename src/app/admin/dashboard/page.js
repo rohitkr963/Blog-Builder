@@ -382,6 +382,34 @@ export default function AdminDashboardPage() {
     (currentEmployeePage - 1) * EMPLOYEES_PER_PAGE,
     currentEmployeePage * EMPLOYEES_PER_PAGE
   );
+  const publishedActivityByEmployee = new Map();
+  for (const blog of adminBlogs) {
+    const employeeId = blog.author?.id;
+    if (blog.status !== "PUBLISHED" || !employeeId) continue;
+
+    const activity = publishedActivityByEmployee.get(employeeId) || {
+      publishedBlogCount: 0,
+      totalViews: 0,
+    };
+    activity.publishedBlogCount += 1;
+    activity.totalViews += blog.views || 0;
+    publishedActivityByEmployee.set(employeeId, activity);
+  }
+  const mostActiveEmployees = employees
+    .map((employee) => {
+      const employeeId = employee.id || employee._id;
+      return {
+        ...employee,
+        ...publishedActivityByEmployee.get(employeeId),
+      };
+    })
+    .filter((employee) => employee.publishedBlogCount > 0)
+    .sort((first, second) =>
+      second.publishedBlogCount - first.publishedBlogCount ||
+      second.totalViews - first.totalViews ||
+      first.name.localeCompare(second.name)
+    )
+    .slice(0, 5);
   const availableBlogCategories = [...new Set(adminBlogs.map((blog) => blog.category).filter(Boolean))]
     .sort((first, second) => first.localeCompare(second));
   const filteredAdminBlogs = adminBlogs.filter((blog) => {
@@ -672,6 +700,38 @@ export default function AdminDashboardPage() {
             </div>
           </div>
         </div>
+
+        <section aria-labelledby="active-employees-title" className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+          <div className="flex flex-col gap-1 border-b border-gray-200 px-5 py-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h2 id="active-employees-title" className="text-lg font-semibold text-gray-900">Most Active Employees</h2>
+              <p className="mt-1 text-xs text-gray-500">Ranked by published blogs, with views as the tiebreaker.</p>
+            </div>
+            <span className="text-xs font-medium text-gray-500">Top 5 contributors</span>
+          </div>
+
+          {employeesLoading || blogsLoading ? (
+            <p className="px-5 py-6 text-sm text-gray-500">Loading contributor activity...</p>
+          ) : mostActiveEmployees.length === 0 ? (
+            <p className="px-5 py-6 text-sm text-gray-500">No published employee blogs yet.</p>
+          ) : (
+            <ol className="divide-y divide-gray-200">
+              {mostActiveEmployees.map((employee, index) => (
+                <li key={employee.id || employee._id} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-4 sm:flex-nowrap">
+                  <span className="w-7 shrink-0 font-mono text-sm font-semibold text-[var(--accent)]">{String(index + 1).padStart(2, "0")}</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-gray-900">{employee.name}</p>
+                    <p className="mt-0.5 text-xs text-gray-500">{employee.department || "Unassigned"}</p>
+                  </div>
+                  <div className="flex w-full items-center justify-between gap-4 text-xs sm:w-auto sm:justify-end">
+                    <span className="font-medium text-gray-700">{employee.publishedBlogCount} {employee.publishedBlogCount === 1 ? "published blog" : "published blogs"}</span>
+                    <span className="text-gray-500">{employee.totalViews.toLocaleString()} views</span>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          )}
+        </section>
 
         {/* Global Notifications */}
         {successMsg && (

@@ -46,6 +46,19 @@ async function main() {
 
 	const health = await request("/api/health");
 	if (health.database !== "connected") throw new Error("Health endpoint did not report a connected database.");
+	const homePage = await fetch(`${baseUrl}/`, { redirect: "manual" });
+	const loginPage = await fetch(`${baseUrl}/login`, { redirect: "manual" });
+	const blogsPage = await fetch(`${baseUrl}/blogs`, { redirect: "manual" });
+	const anonymousBlogApi = await fetch(`${baseUrl}/api/public/blogs/anonymous-test`, { redirect: "manual" });
+	if (homePage.status !== 200 || loginPage.status !== 200) {
+		throw new Error("Homepage and login must remain accessible without authentication.");
+	}
+	if (![307, 308].includes(blogsPage.status) || !blogsPage.headers.get("location")?.includes("/login")) {
+		throw new Error("Blog listing page should redirect anonymous users to login.");
+	}
+	if (anonymousBlogApi.status !== 401) {
+		throw new Error("Public blog detail API should reject anonymous users.");
+	}
 
 	await request("/api/auth/signup", {
 		method: "POST",
@@ -94,14 +107,19 @@ async function main() {
 		throw new Error("Editing a blog title changed its public slug.");
 	}
 
-	const publicBlog = await request(`/api/public/blogs/${originalSlug}`);
-	if (publicBlog.blog?.title !== "Smoke Test Blog After Rename") {
-		throw new Error("Published blog was not available at its stable slug after editing.");
+	const anonymousArticlePage = await fetch(`${baseUrl}/blog/${originalSlug}`, { redirect: "manual" });
+	const anonymousArticleApi = await fetch(`${baseUrl}/api/public/blogs/${originalSlug}`, { redirect: "manual" });
+	if (![307, 308].includes(anonymousArticlePage.status) || anonymousArticleApi.status !== 401) {
+		throw new Error("Anonymous users should not access blog details or their API.");
+	}
+	const authenticatedPublicBlog = await request(`/api/public/blogs/${originalSlug}`, { headers: { Cookie: authCookie } });
+	if (authenticatedPublicBlog.blog?.title !== "Smoke Test Blog After Rename") {
+		throw new Error("Authenticated users should be able to read published blogs.");
 	}
 
 	const commentResult = await request(`/api/public/blogs/${originalSlug}/comments`, {
 		method: "POST",
-		headers: { "Content-Type": "application/json" },
+		headers: { "Content-Type": "application/json", Cookie: authCookie },
 		body: JSON.stringify({
 			name: "Smoke Test Reader",
 			email: testEmail,
@@ -116,7 +134,7 @@ async function main() {
 	if (!savedComment || savedComment.status !== "APPROVED") {
 		throw new Error("Submitted comment was not immediately approved.");
 	}
-	const publicComments = await request(`/api/public/blogs/${originalSlug}/comments`);
+	const publicComments = await request(`/api/public/blogs/${originalSlug}/comments`, { headers: { Cookie: authCookie } });
 	if (publicComments.count !== 1 || publicComments.comments?.[0]?.content !== "Smoke test comment.") {
 		throw new Error("Submitted comment was not immediately visible publicly.");
 	}
