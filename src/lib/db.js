@@ -38,12 +38,23 @@ export async function connectDB() {
     throw new Error("MONGODB_URI environment variable is missing.");
   }
 
-  // If we already have an active connection, return it immediately
-  if (cached.conn) {
+  const connectionState = mongoose.connection.readyState;
+
+  // Reuse only a live connection; serverless instances may outlive the DB socket.
+  if (cached.conn && connectionState === 1) {
     return cached.conn;
   }
 
-  // If no ongoing connection attempt, start one
+  // Share an in-flight connection attempt across concurrent requests.
+  if (cached.promise && connectionState === 2) {
+    cached.conn = await cached.promise;
+    return cached.conn;
+  }
+
+  // A resolved cached promise can point at a connection that was closed while idle.
+  cached.conn = null;
+  cached.promise = null;
+
   if (!cached.promise) {
     const options = {
       // bufferCommands: false means Mongoose won't buffer commands
@@ -59,6 +70,7 @@ export async function connectDB() {
       })
       .catch((error) => {
         // Reset the promise so the next call tries again
+        cached.conn = null;
         cached.promise = null;
         console.error("❌ MongoDB connection failed:", error.message);
         throw error;

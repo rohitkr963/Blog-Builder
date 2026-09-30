@@ -26,6 +26,17 @@ export async function GET() {
       3: "disconnecting",
     };
 
+    if (state !== 1) {
+      return NextResponse.json(
+        {
+          success: false,
+          database: stateMap[state] || "unknown",
+          message: "Database connection is not ready",
+        },
+        { status: 503 }
+      );
+    }
+
     return NextResponse.json({
       success: true,
       database: stateMap[state] || "unknown",
