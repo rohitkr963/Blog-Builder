@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-export async function POST() {
+export async function POST(request) {
   try {
     const response = NextResponse.json({
       success: true,
@@ -12,7 +12,7 @@ export async function POST() {
       name: "token",
       value: "",
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: new URL(request.url).protocol === "https:",
       sameSite: "lax",
       path: "/",
       maxAge: 0,

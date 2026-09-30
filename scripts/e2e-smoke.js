@@ -106,7 +106,18 @@ async function main() {
 	}
 		const authCookie = loginResponse.headers.get("set-cookie")?.split(";")[0];
 		if (!authCookie) throw new Error("Login did not return an authentication cookie.");
+	const setCookieHeader = loginResponse.headers.get("set-cookie") || "";
+	if (new URL(baseUrl).protocol === "http:" && /;\s*secure(?:;|$)/i.test(setCookieHeader)) {
+		throw new Error("HTTP login responses must not mark the session cookie Secure.");
+	}
 		const authHeaders = { "Content-Type": "application/json", Cookie: authCookie };
+	const authenticatedEmployeePage = await fetch(`${baseUrl}/employee/dashboard`, {
+		headers: { Cookie: authCookie },
+		redirect: "manual",
+	});
+	if (authenticatedEmployeePage.status !== 200) {
+		throw new Error("A valid login cookie should open protected employee pages.");
+	}
 
 	const publicBlogs = await request("/api/public/blogs?page=1&limit=1");
 	if (!Array.isArray(publicBlogs.blogs) || !publicBlogs.pagination) {
