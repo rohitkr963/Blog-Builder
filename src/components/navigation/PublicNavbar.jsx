@@ -13,8 +13,11 @@ export default function PublicNavbar({ showBackLink = false }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [logoutError, setLogoutError] = useState("");
   const accountMenuRef = useRef(null);
+  const mobileMenuButtonRef = useRef(null);
+  const mobileMenuRef = useRef(null);
 
   useEffect(() => {
     let active = true;
@@ -50,6 +53,27 @@ export default function PublicNavbar({ showBackLink = false }) {
     return () => document.removeEventListener("pointerdown", closeOnOutsideClick);
   }, [menuOpen]);
 
+  useEffect(() => {
+    if (!mobileMenuOpen) return undefined;
+    const closeOnOutsideClick = (event) => {
+      if (
+        !mobileMenuRef.current?.contains(event.target) &&
+        !mobileMenuButtonRef.current?.contains(event.target)
+      ) {
+        setMobileMenuOpen(false);
+      }
+    };
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") setMobileMenuOpen(false);
+    };
+    document.addEventListener("pointerdown", closeOnOutsideClick);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsideClick);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [mobileMenuOpen]);
+
   const handleLogout = async () => {
     setLogoutError("");
     try {
@@ -58,6 +82,7 @@ export default function PublicNavbar({ showBackLink = false }) {
       if (!response.ok || !data.success) throw new Error(data.message || "Could not log out.");
       setUser(null);
       setMenuOpen(false);
+      setMobileMenuOpen(false);
       router.replace("/login");
       router.refresh();
     } catch (error) {
@@ -66,6 +91,7 @@ export default function PublicNavbar({ showBackLink = false }) {
   };
 
   const dashboardHref = user?.role === "ADMIN" ? "/admin/dashboard" : "/employee/dashboard";
+  const dashboardLabel = user?.role === "ADMIN" ? "Admin Dashboard" : "Employee Studio";
   const profilePhoto = user?.profilePhoto;
   const profileHref = user?.role === "EMPLOYEE" ? "/employee/profile" : "/admin/dashboard";
   const writeArticleHref = user ? "/employee/blog/new" : "/login?next=/employee/blog/new";
@@ -91,6 +117,19 @@ export default function PublicNavbar({ showBackLink = false }) {
               ← All articles
             </Link>
           )}
+          <button
+            type="button"
+            ref={mobileMenuButtonRef}
+            aria-controls="mobile-navigation"
+            aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+            aria-expanded={mobileMenuOpen}
+            onClick={() => setMobileMenuOpen((isOpen) => !isOpen)}
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-[var(--line)] bg-[var(--surface)] text-[var(--foreground)] transition hover:bg-[var(--surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] md:hidden"
+          >
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className="h-5 w-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+              {mobileMenuOpen ? <path d="m6 6 12 12M18 6 6 18" /> : <path d="M4 6h16M4 12h16M4 18h16" />}
+            </svg>
+          </button>
           <ThemeToggle />
 
           {!loading && user ? (
@@ -120,6 +159,33 @@ export default function PublicNavbar({ showBackLink = false }) {
           )}
         </div>
       </div>
+
+      {mobileMenuOpen && (
+        <nav
+          id="mobile-navigation"
+          ref={mobileMenuRef}
+          aria-label="Mobile navigation"
+          className="border-t border-[var(--line)] bg-[var(--surface)] px-4 py-3 shadow-lg md:hidden"
+        >
+          <div className="mx-auto grid max-w-[1280px] gap-1">
+            <Link href="/" onClick={() => setMobileMenuOpen(false)} className="rounded-md px-3 py-3 text-sm font-semibold text-[var(--foreground)] hover:bg-[var(--surface-muted)]">BlogCraft</Link>
+            <Link href="/blogs" prefetch={false} onClick={() => setMobileMenuOpen(false)} className="rounded-md px-3 py-3 text-sm font-semibold text-[var(--foreground)] hover:bg-[var(--surface-muted)]">Explore Blogs</Link>
+            {user && <Link href={dashboardHref} prefetch={false} onClick={() => setMobileMenuOpen(false)} className="rounded-md px-3 py-3 text-sm font-semibold text-[var(--foreground)] hover:bg-[var(--surface-muted)]">{dashboardLabel}</Link>}
+            <Link href={writeArticleHref} prefetch={false} onClick={() => setMobileMenuOpen(false)} className="rounded-md px-3 py-3 text-sm font-semibold text-[var(--foreground)] hover:bg-[var(--surface-muted)]">Write Article</Link>
+            {user ? (
+              <>
+                <Link href={profileHref} prefetch={false} onClick={() => setMobileMenuOpen(false)} className="rounded-md px-3 py-3 text-sm font-semibold text-[var(--foreground)] hover:bg-[var(--surface-muted)]">Profile</Link>
+                <Link href="/settings" prefetch={false} onClick={() => setMobileMenuOpen(false)} className="rounded-md px-3 py-3 text-sm font-semibold text-[var(--foreground)] hover:bg-[var(--surface-muted)]">Settings</Link>
+              </>
+            ) : (
+              <>
+                <Link href="/login" onClick={() => setMobileMenuOpen(false)} className="rounded-md px-3 py-3 text-sm font-semibold text-[var(--foreground)] hover:bg-[var(--surface-muted)]">Sign in</Link>
+                <Link href="/signup" onClick={() => setMobileMenuOpen(false)} className="rounded-md px-3 py-3 text-sm font-semibold text-[var(--foreground)] hover:bg-[var(--surface-muted)]">Create an account</Link>
+              </>
+            )}
+          </div>
+        </nav>
+      )}
     </header>
   );
 }
